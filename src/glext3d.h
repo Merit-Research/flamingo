@@ -9,4 +9,6 @@ void glext3d_render_export(guint w, guint h);
 void glext3d_input_view_parameters(FILE *in);
 void glext3d_output_view_parameters(FILE *out);
 
+void render_text_to_texture(const char *text, GLuint *texture_id);
+
 #endif

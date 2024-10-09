@@ -10,6 +10,9 @@
 
 #include "main.h"
 #include "glext2d.h"
+
+#include <glext3d.h>
+
 #include "info_interface.h"
 
 static GLfloat trans_x = 0.0;
@@ -94,15 +97,20 @@ void cb_glext2d_realize(GtkWidget *widget, gpointer user_data)
 
 	// generate display lists for our font
 	const char *font_string = gtk_entry_get_text(GTK_ENTRY(viz->prefs_label_font));
-	viz->font_list_2d = glGenLists(128);
-	font_desc = pango_font_description_from_string(font_string);
-	font = gdk_gl_font_use_pango_font(font_desc, 0, 128, viz->font_list_2d);
-	if (font == NULL) {
+	GLuint font_texture;
+
+	// Render the text to a texture
+	render_text_to_texture(font_string, &font_texture);
+
+	// Check if the texture was created, otherwise fall back
+	if (font_texture == 0) {
 		g_warning("cannot load font '%s', falling back to '%s'", font_string, DEFAULT_LABEL_FONT);
 
-		font_desc = pango_font_description_from_string(DEFAULT_LABEL_FONT);
-		font = gdk_gl_font_use_pango_font(font_desc, 0, 128, viz->font_list_3d);
+		render_text_to_texture(DEFAULT_LABEL_FONT, &font_texture);
 	}
+
+	// Now you can bind and use font_texture in your OpenGL rendering pipeline
+	glBindTexture(GL_TEXTURE_2D, font_texture);
 
 	// use pango to determine dimensions of font
 	font_metrics = pango_font_get_metrics(font, NULL);

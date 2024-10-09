@@ -577,7 +577,8 @@ gpointer nf_feed_thread(gpointer feed_in)
 	v5rec_t *rec;
 	gint recv_bytes;
 	guint time_stamp;
-	
+
+	GPrivate *watch_list_stash = NULL;
 	watch_list_stash = g_private_new(NULL);
 	g_private_set(watch_list_stash, NULL);
 	
@@ -881,9 +882,9 @@ void load_archive_data(client_t *client){
 		recv5.dstip = *((guint32*)(rec+fo.dstaddr));
 		recv5.srcport = *((guint16*)(rec+fo.srcport));
 		recv5.dstport = *((guint16*)(rec+fo.dstport));
-		recv5.srcas = *((u_int16*)(rec+fo.src_as));
-		recv5.dstas = *((u_int16*)(rec+fo.dst_as));
-		recv5.protocol = *((u_int8*)(rec+fo.prot));
+		recv5.srcas = *((uint16_t*)(rec+fo.src_as));
+		recv5.dstas = *((uint16_t*)(rec+fo.dst_as));
+		recv5.protocol = *((uint8_t*)(rec+fo.prot));
 		recv5.packets =  *((guint32*)(rec+fo.dPkts)) * tracker->scaler;
 		
 		//tag client with most recent playback time

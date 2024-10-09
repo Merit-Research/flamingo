@@ -24,6 +24,7 @@
 #define PROTONUMBERS_FILE "proto-numbers.data"
 #define GLADE_FILE "interface.glade"
 
+viz_t *viz;
 
 gint gtree_compare(gconstpointer node_a_in, gconstpointer node_b_in, gpointer data)
 {

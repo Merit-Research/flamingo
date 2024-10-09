@@ -26,6 +26,50 @@ static GLfloat view_scale = ZOOM_START_3D;
 
 extern viz_t *viz;
 
+void render_text_to_texture(const char *text, GLuint *texture_id) {
+	// Create a Cairo surface and context
+	cairo_surface_t *surface;
+	cairo_t *cr;
+
+	int width = 256;  // Set desired width and height for the text texture
+	int height = 64;
+
+	surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+	cr = cairo_create(surface);
+
+	// Set up Pango layout
+	PangoLayout *layout;
+	PangoFontDescription *font_desc;
+
+	layout = pango_cairo_create_layout(cr);
+	font_desc = pango_font_description_from_string("Sans 12"); // You can use your font_string here
+	pango_layout_set_font_description(layout, font_desc);
+	pango_font_description_free(font_desc);
+
+	// Set the text
+	pango_layout_set_text(layout, text, -1);
+
+	// Render the text using Cairo
+	cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);  // White text color
+	pango_cairo_update_layout(cr, layout);
+	pango_cairo_show_layout(cr, layout);
+
+	// Convert the Cairo surface to OpenGL texture
+	glGenTextures(1, texture_id);
+	glBindTexture(GL_TEXTURE_2D, *texture_id);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// Upload the Cairo surface to OpenGL texture
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, cairo_image_surface_get_data(surface));
+
+	// Cleanup
+	g_object_unref(layout);
+	cairo_destroy(cr);
+	cairo_surface_destroy(surface);
+}
+
 
 void glext3d_input_view_parameters(FILE *in)
 {
@@ -169,7 +213,6 @@ void cb_reset_3d_view_clicked(GtkButton *button, gpointer user_data)
 	gtk_widget_queue_draw(GTK_WIDGET(viz->glext3d));
 }
 
-
 void glext3d_realize_init()
 {
 	PangoFont *font;
@@ -296,15 +339,20 @@ void glext3d_realize_init()
 
 	// generate display lists for our font
 	const char *font_string = gtk_entry_get_text(GTK_ENTRY(viz->prefs_label_font));
-	viz->font_list_3d = glGenLists(128);
-	font_desc = pango_font_description_from_string(font_string);
-	font = gdk_gl_font_use_pango_font(font_desc, 0, 128, viz->font_list_3d);
-	if (font == NULL) {
+	GLuint font_texture;
+
+	// Render the text to a texture
+	render_text_to_texture(font_string, &font_texture);
+
+	// Check if the texture was created, otherwise fall back
+	if (font_texture == 0) {
 		g_warning("cannot load font '%s', falling back to '%s'", font_string, DEFAULT_LABEL_FONT);
 
-		font_desc = pango_font_description_from_string(DEFAULT_LABEL_FONT);
-		font = gdk_gl_font_use_pango_font(font_desc, 0, 128, viz->font_list_3d);
+		render_text_to_texture(DEFAULT_LABEL_FONT, &font_texture);
 	}
+
+	// Now you can bind and use font_texture in your OpenGL rendering pipeline
+	glBindTexture(GL_TEXTURE_2D, font_texture);
 
 	// use pango to determine dimensions of font
 	font_metrics = pango_font_get_metrics(font, NULL);

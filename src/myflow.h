@@ -63,7 +63,7 @@ typedef struct v5rec{
 }v5rec_t;
 
 // pass private data into yyparse
-GPrivate* watch_list_stash;
+extern GPrivate* watch_list_stash;
 
 gboolean nf_feed_bind(nf_feed_t *feed);
 gpointer nf_feed_thread(gpointer feed_in);
